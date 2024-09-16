@@ -1,0 +1,6 @@
+@ToDoDiligent_HostAddress = http://localhost:5007
+
+GET {{ToDoDiligent_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
