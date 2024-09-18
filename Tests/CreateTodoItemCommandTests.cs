@@ -13,16 +13,16 @@ namespace Tests
     {
         private readonly Mock<DataContext> _mockContext;
         private readonly Mock<IHubContext<TodoHub>> _mockHubContext;
-        private readonly Mock<TodoBackgroundJobService> _mockBackgroundJobService;
+     //   private readonly Mock<TodoBackgroundJobService> _mockBackgroundJobService;
         private readonly Create.Handler _handler;
 
         public CreateTodoItemCommandTests()
         {
             _mockContext = new Mock<DataContext>();
             _mockHubContext = new Mock<IHubContext<TodoHub>>();
-            _mockBackgroundJobService = new Mock<TodoBackgroundJobService>();  
+            //_mockBackgroundJobService = new Mock<TodoBackgroundJobService>();  
 
-            _handler = new Create.Handler(_mockContext.Object, _mockHubContext.Object, _mockBackgroundJobService.Object);
+            _handler = new Create.Handler(_mockContext.Object, _mockHubContext.Object);
         }
 
         [Fact]
