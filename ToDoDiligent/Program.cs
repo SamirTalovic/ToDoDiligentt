@@ -1,10 +1,12 @@
 using API.Extension;
 using Hangfire;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc.Authorization;
 using ToDoDiligent.Extension;
 using ToDoDiligent.Middleware;
 using ToDoDiligent.Services;
+using static Application.ToDoItem.Create;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -18,6 +20,7 @@ builder.Services.AddHangfire(configuration =>
         configuration.UseSqlServerStorage(@"Server=.;Database=Falcet123;Trusted_Connection=True;TrustServerCertificate=True;")); 
 builder.Services.AddHangfireServer()
     ;
+builder.Services.AddMediatR(typeof(CreateTodoItemCommand).Assembly);
 builder.Services.AddSignalR();
 builder.Services.AddApplicationServices(builder.Configuration);
 builder.Services.AddIdentityServices(builder.Configuration);
@@ -37,7 +40,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-
+app.UseRouting();
 app.UseCors("CorsPolicy");
 app.UseAuthentication();
 app.UseAuthorization();
