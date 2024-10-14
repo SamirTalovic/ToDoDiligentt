@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Data;
+using System.Security.Claims;
 using ToDoDiligent.DTOs;
 using ToDoDiligent.Services;
 
@@ -92,38 +93,37 @@ namespace ToDoDiligent.Controllers
 
             [Authorize]
             [HttpPost("refreshToken")]
-            public async Task<ActionResult<UserDto>> RefreshToken()
+        public async Task<ActionResult<UserDto>> RefreshToken()
+        {
+            var refreshToken = Request.Cookies["refreshToken"];
+            var user = await _userManager.Users.Include(r => r.RefreshTokens)
+                        .FirstOrDefaultAsync(x => x.Email == User.FindFirstValue(ClaimTypes.Email));
+
+            if (user == null || refreshToken == null) return Unauthorized();
+
+            var oldToken = user.RefreshTokens.SingleOrDefault(x => x.Token == refreshToken && x.IsActive);
+            if (oldToken == null) return Unauthorized("Invalid refresh token");
+
+            await SetRefreshToken(user);
+            return CreateUserObject(user);
+        }
+        private async Task SetRefreshToken(AppUser user)
+        {
+            var refreshToken = _tokenService.GenerateRefreshToken();
+            user.RefreshTokens.Add(refreshToken);
+            await _userManager.UpdateAsync(user);
+
+            var cookieOptions = new CookieOptions
             {
-                var refreshToken = Request.Cookies["refreshToken"];
-                var user = await _userManager.Users
-                    .Include(r => r.RefreshTokens)
-                    .FirstOrDefaultAsync(x => x.Email == _userAccessor.GetEmail());
+                HttpOnly = true,
+                Expires = DateTime.UtcNow.AddDays(7),
+                Secure = true,
+                SameSite = SameSiteMode.Strict
+            };
+            Response.Cookies.Append("refreshToken", refreshToken.Token, cookieOptions);
+        }
 
-                if (user == null) return Unauthorized();
-
-                var oldToken = user.RefreshTokens.SingleOrDefault(x => x.Token == refreshToken);
-
-                if (oldToken != null && !oldToken.IsActive) return Unauthorized();
-
-                return CreateUserObject(user);
-            }
-        //with middleaware sa only cookie
-            private async Task SetRefreshToken(AppUser user)
-            {
-                var refreshToken = _tokenService.GenerateRefreshToken();
-                user.RefreshTokens.Add(refreshToken);
-                await _userManager.UpdateAsync(user);
-
-                var cookieOptions = new CookieOptions
-                {
-                    HttpOnly = true,
-                    Expires = DateTime.UtcNow.AddDays(7)
-                };
-
-                Response.Cookies.Append("refreshToken", refreshToken.Token, cookieOptions);
-            }
-
-            private UserDto CreateUserObject(AppUser user)
+        private UserDto CreateUserObject(AppUser user)
             {
                 return new UserDto
                 {
