@@ -15,35 +15,27 @@ namespace Application.ToDoItem
         {
             public string Title { get; set; }
             public string Description { get; set; }
-            public string AppUserId { get; set; }
         }
 
         public class Handler : IRequestHandler<CreateTodoItemCommand, Result<int>>
         {
             private readonly DataContext _context;
             private readonly IHubContext<TodoHub> _hubContext;
-            //private readonly TodoBackgroundJobService _backgroundJobService;
-            public Handler(DataContext context, IHubContext<TodoHub> hubContext)
+            private readonly TodoBackgroundJobService _backgroundJobService;
+            public Handler(DataContext context, IHubContext<TodoHub> hubContext, TodoBackgroundJobService backgroundJobService)
             {
                 _context = context;
                 _hubContext = hubContext;
-                //_backgroundJobService = backgroundJobService;
+                _backgroundJobService = backgroundJobService;
             }
 
             public async Task<Result<int>> Handle(CreateTodoItemCommand request, CancellationToken cancellationToken)
             {
-                if (_context == null)
-                    throw new InvalidOperationException("DataContext is not initialized.");
-
-                if (_hubContext == null)
-                    throw new InvalidOperationException("HubContext is not initialized.");
                 var todoItem = new TodoItem
                 {
                     Title = request.Title,
                     Description = request.Description,
-                    CreatedAt = DateTime.UtcNow,
-                    AppUserId = request.AppUserId
-
+                    CreatedAt = DateTime.UtcNow
                 };
 
                 _context.TodoItems.Add(todoItem);
@@ -54,7 +46,7 @@ namespace Application.ToDoItem
                 {
                     await _hubContext.Clients.All.SendAsync("ReceiveTodoUpdate", todoItem.Id, todoItem.Title, todoItem.Description);
 
-                    //BackgroundJob.Enqueue(() => _backgroundJobService.CleanupOldTodoItems());
+                    BackgroundJob.Enqueue(() => _backgroundJobService.CleanupOldTodoItems());
 
                     return Result<int>.Success(todoItem.Id);
                 }
@@ -69,7 +61,6 @@ namespace Application.ToDoItem
             {
                 RuleFor(x => x.Title).NotEmpty();
                 RuleFor(x => x.Description).NotEmpty();
-                RuleFor(x => x.AppUserId).NotEmpty();
             }
         }
     }

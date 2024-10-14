@@ -8,10 +8,9 @@ namespace ToDoDiligent.Services
         {
             await Clients.All.SendAsync("ReceiveMessage", message);
         }
-
+        //zastita
         public async Task UpdateTodoItem(int id, string title, string description)
         {
-            Console.WriteLine($"Todo Update: {id}, {title}, {description}");
             await Clients.All.SendAsync("ReceiveTodoUpdate", id, title, description);
         }
     }
