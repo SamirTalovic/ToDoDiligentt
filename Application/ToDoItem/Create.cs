@@ -5,6 +5,7 @@ using Hangfire;
 using MediatR;
 using Microsoft.AspNetCore.SignalR;
 using Persistance;
+using Rebus.Bus;
 using ToDoDiligent.Services;
 
 namespace Application.ToDoItem
@@ -15,6 +16,7 @@ namespace Application.ToDoItem
         {
             public string Title { get; set; }
             public string Description { get; set; }
+            public string AppUserId { get; set; }
         }
 
         public class Handler : IRequestHandler<CreateTodoItemCommand, Result<int>>
@@ -22,20 +24,31 @@ namespace Application.ToDoItem
             private readonly DataContext _context;
             private readonly IHubContext<TodoHub> _hubContext;
             private readonly TodoBackgroundJobService _backgroundJobService;
-            public Handler(DataContext context, IHubContext<TodoHub> hubContext, TodoBackgroundJobService backgroundJobService)
+            private readonly IBackgroundJobClient _backgroundJobClient;
+            private readonly IBus _bus;
+            public Handler(DataContext context, IHubContext<TodoHub> hubContext, TodoBackgroundJobService backgroundJobService, IBackgroundJobClient backgroundJobClient, IBus bus)
             {
                 _context = context;
                 _hubContext = hubContext;
                 _backgroundJobService = backgroundJobService;
+                _backgroundJobClient = backgroundJobClient;
+                _bus = bus;
             }
 
             public async Task<Result<int>> Handle(CreateTodoItemCommand request, CancellationToken cancellationToken)
             {
+                if (_context == null)
+                    throw new InvalidOperationException("DataContext is not initialized.");
+
+                if (_hubContext == null)
+                    throw new InvalidOperationException("HubContext is not initialized.");
                 var todoItem = new TodoItem
                 {
                     Title = request.Title,
                     Description = request.Description,
-                    CreatedAt = DateTime.UtcNow
+                    CreatedAt = DateTime.UtcNow,
+                    AppUserId = request.AppUserId
+
                 };
 
                 _context.TodoItems.Add(todoItem);
@@ -46,10 +59,13 @@ namespace Application.ToDoItem
                 {
                     await _hubContext.Clients.All.SendAsync("ReceiveTodoUpdate", todoItem.Id, todoItem.Title, todoItem.Description);
 
-                    BackgroundJob.Enqueue(() => _backgroundJobService.CleanupOldTodoItems());
-
+                    _backgroundJobClient.Enqueue(() => _backgroundJobService.CleanupOldTodoItems());
+                    _backgroundJobClient.Schedule(() => _backgroundJobService.ScheduleJobs(),TimeSpan.FromSeconds(60));
+                    var message = new MyMessage { Text = "Radiiii" };
+                    await _bus.Send(message);
                     return Result<int>.Success(todoItem.Id);
                 }
+
 
                 return Result<int>.Failure("Failed to create todo item");
             }
@@ -61,6 +77,7 @@ namespace Application.ToDoItem
             {
                 RuleFor(x => x.Title).NotEmpty();
                 RuleFor(x => x.Description).NotEmpty();
+                RuleFor(x => x.AppUserId).NotEmpty();
             }
         }
     }
