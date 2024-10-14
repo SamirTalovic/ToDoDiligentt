@@ -1,6 +1,7 @@
 ﻿using Application.ToDoItem;
 using Domains;
 using FluentAssertions;
+using Hangfire;
 using Microsoft.AspNetCore.SignalR;
 using Moq;
 using Persistance;
@@ -15,14 +16,16 @@ namespace Tests
         private readonly Mock<IHubContext<TodoHub>> _mockHubContext;
         private readonly Mock<TodoBackgroundJobService> _mockBackgroundJobService;
         private readonly Create.Handler _handler;
+        private readonly Mock<IBackgroundJobClient> _backgroundJobClient;
 
         public CreateTodoItemCommandTests()
         {
             _mockContext = new Mock<DataContext>();
             _mockHubContext = new Mock<IHubContext<TodoHub>>();
-            _mockBackgroundJobService = new Mock<TodoBackgroundJobService>();  
+            _mockBackgroundJobService = new Mock<TodoBackgroundJobService>();
+            _backgroundJobClient = new Mock<IBackgroundJobClient>();
 
-            _handler = new Create.Handler(_mockContext.Object, _mockHubContext.Object, _mockBackgroundJobService.Object);
+           // _handler = new Create.Handler(_mockContext.Object, _mockHubContext.Object,_mockBackgroundJobService, _backgroundJobClient);
         }
 
         [Fact]
