@@ -1,14 +1,13 @@
-
 version: '3.4'
 
 services:
   web:
     image:  ${DOCKER_REGISTRY-}tododiligent
     build:
-      context: .
-      dockerfile: ToDoDiligent\Dockerfile
+      context: C:/Users/YourName/Desktop/MyProject/ToDoDiligent
+      dockerfile: Dockerfile
     ports:
-      - "5000:80" 
+      - "5000:80"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
     depends_on:
@@ -20,4 +19,20 @@ services:
       SA_PASSWORD: "tvojjakpassword"
       ACCEPT_EULA: "Y"
     ports:
-      - "1433:1433"  
+      - "1433:1433"
+
+  frontend:
+    build:
+      context: C:\Users\Samir\Desktop\FE TodoDiligent\tododilig
+      dockerfile: Dockerfile
+    ports:
+      - "3000:80"
+    depends_on:
+      - web
+    networks:
+      - frontend-net
+      - backend-net
+
+networks:
+  frontend-net:
+  backend-net:
