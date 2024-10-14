@@ -26,9 +26,8 @@ namespace API.Extension
                     policy
                         .AllowAnyHeader()
                         .AllowAnyMethod()
-                        .WithOrigins("http://localhost:5173")
-                        .AllowCredentials(); 
-                }); 
+                        .AllowAnyOrigin();
+                });
             });
             services.AddScoped<IUserAccessor, UserAccessor>();
 

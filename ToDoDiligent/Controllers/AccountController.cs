@@ -107,7 +107,7 @@ namespace ToDoDiligent.Controllers
 
                 return CreateUserObject(user);
             }
-
+        //with middleaware sa only cookie
             private async Task SetRefreshToken(AppUser user)
             {
                 var refreshToken = _tokenService.GenerateRefreshToken();

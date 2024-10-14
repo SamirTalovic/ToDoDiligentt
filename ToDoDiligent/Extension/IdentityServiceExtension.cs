@@ -36,6 +36,6 @@ namespace ToDoDiligent.Extension
             services.AddScoped<TokenService>();
 
             return services;
-        }
+        }   
     }
 }
